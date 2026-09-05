@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-sim:
+    name: Build simulator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsimavr-dev libelf-dev
+      - name: Build simulator
+        run: make build
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          mv libavrsim.a artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifacts
+          name: avrsim
+          if-no-files-found: error
+          retention-days: 1
+
+  check-format:
+    name: Analyze code with clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install clang-format-18
+      - name: Check format
+        run: make check-format
+        env:
+          CLANG_FORMAT: clang-format-18
